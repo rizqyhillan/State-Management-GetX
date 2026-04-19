@@ -1,127 +1,64 @@
-# Dependency Management pada GetX
 
-## Apa Itu Dependency Management?
+# GetX Flutter - 3 Pilar Utama
 
-Di **GetX (Flutter)**, **Dependency Management** adalah fitur untuk mendaftarkan, menyimpan, menyediakan, dan mengelola object/class secara otomatis seperti Controller, Service, Repository, API Client, dan Database Helper tanpa harus membuat instance manual berulang kali.
+GetX adalah framework populer di Flutter yang menyediakan solusi sederhana, cepat, ringan, dan powerful untuk membangun aplikasi modern dengan kode yang lebih bersih serta minim boilerplate. GetX banyak digunakan karena menggabungkan tiga kebutuhan utama aplikasi ke dalam satu package.
 
-Sederhananya:
+## Tiga Pilar Utama GetX
 
-> Dependency Management adalah cara GetX mengatur siapa yang membuat object, kapan dipakai, dan kapan dibuang.
+1. State Management  
+2. Route Management  
+3. Dependency Management  
 
-Fitur ini menggunakan konsep **Dependency Injection (DI)**.
-
----
-
-## Kenapa Penting?
-
-Tanpa GetX:
-
-```dart
-final controller = HomeController();
-```
-
-Jika dipakai di banyak halaman:
-
-* Object bisa dibuat berulang
-* Sulit dikelola
-* Boros memory
-* Susah maintenance
-
-Dengan GetX:
-
-```dart
-Get.put(HomeController());
-```
-
-Lalu panggil di mana saja:
-
-```dart
-final controller = Get.find<HomeController>();
-```
-
-Lebih efisien, bersih, dan rapi.
+Dengan tiga fitur ini, developer dapat membuat aplikasi yang scalable, rapi, mudah di-maintain, dan cepat dikembangkan.
 
 ---
 
-## Fungsi Utama Dependency Management
+# Daftar Isi
 
-## 1. Get.put()
-
-Membuat object langsung saat didaftarkan.
-
-```dart
-Get.put(HomeController());
-```
-
-Ambil kembali:
-
-```dart
-Get.find<HomeController>();
-```
-
-Cocok untuk:
-
-* Controller utama
-* Object yang langsung digunakan
+- [GetX Flutter - 3 Pilar Utama](#getx-flutter---3-pilar-utama)
+- [1. State Management](#1-state-management)
+- [2. Route Management](#2-route-management)
+- [3. Dependency Management](#3-dependency-management)
+- [Perbandingan 3 Pilar](#perbandingan-3-pilar)
+- [Struktur Project GetX](#struktur-project-getx)
+- [Setup Awal](#setup-awal)
+- [Best Practice](#best-practice)
+- [Kesimpulan](#kesimpulan)
 
 ---
 
-## 2. Get.lazyPut()
+# 1. State Management
 
-Object dibuat saat pertama kali dipanggil.
+## Apa Itu State Management?
 
-```dart
-Get.lazyPut(() => AuthController());
-```
+State Management adalah cara mengatur perubahan data pada aplikasi agar tampilan UI otomatis ikut berubah ketika data berubah.
 
-Kelebihan:
+Contoh kasus:
 
-* Hemat memory
-* Tidak langsung dibuat
+- Counter bertambah
+- Loading indicator
+- Data API tampil
+- Cart update
+- Form validation
+- Search realtime
+- Toggle dark mode
 
-Cocok untuk:
-
-* Halaman yang jarang dibuka
-* Controller sekunder
-
----
-
-## 3. Get.putAsync()
-
-Untuk object asynchronous seperti database atau SharedPreferences.
-
-```dart
-await Get.putAsync(() async {
-  return await DatabaseService().init();
-});
-```
-
-Cocok untuk:
-
-* Inisialisasi startup app
-* Firebase
-* Local storage
+GetX menyediakan state management yang ringan, cepat, dan mudah digunakan.
 
 ---
 
-## 4. Get.create()
+## Jenis State Management di GetX
 
-Selalu membuat instance baru setiap dipanggil.
+### 1. Reactive State Management
 
-```dart
-Get.create(() => CartController());
-```
+Menggunakan:
 
-Cocok untuk:
+- `.obs`
+- `Obx()`
 
-* Controller temporary
-* Object per halaman
+Jika nilai berubah, UI akan otomatis rebuild.
 
----
-
-## Contoh Implementasi Lengkap
-
-### HomeController
+### Contoh Controller
 
 ```dart
 import 'package:get/get.dart';
@@ -133,35 +70,34 @@ class HomeController extends GetxController {
     count++;
   }
 }
-```
 
----
 
-### Register Dependency
+### Contoh UI
 
 ```dart
-void main() {
-  Get.put(HomeController());
-  runApp(MyApp());
-}
-```
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
----
-
-### Gunakan di UI
-
-```dart
 class HomePage extends StatelessWidget {
-  final controller = Get.find<HomeController>();
+  final controller = Get.put(HomeController());
+
+  HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: const Text("Reactive State"),
+      ),
       body: Center(
-        child: Obx(() => Text('${controller.count}')),
+        child: Obx(() => Text(
+              '${controller.count}',
+              style: const TextStyle(fontSize: 30),
+            )),
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: controller.increment,
+        child: const Icon(Icons.add),
       ),
     );
   }
@@ -170,9 +106,358 @@ class HomePage extends StatelessWidget {
 
 ---
 
+### 2. Simple State Management
+
+Menggunakan:
+
+* `GetBuilder()`
+* `update()`
+
+### Controller
+
+```dart
+class HomeController extends GetxController {
+  int count = 0;
+
+  void increment() {
+    count++;
+    update();
+  }
+}
+```
+
+### UI
+
+```dart
+GetBuilder<HomeController>(
+  init: HomeController(),
+  builder: (controller) {
+    return Text(
+      '${controller.count}',
+      style: TextStyle(fontSize: 30),
+    );
+  },
+)
+```
+
+---
+
+## Worker pada GetX
+
+Worker digunakan untuk memantau perubahan state dan menjalankan aksi tertentu.
+
+### ever()
+
+Dipanggil setiap data berubah.
+
+```dart
+ever(count, (_) {
+  print("Count berubah");
+});
+```
+
+### once()
+
+Dipanggil sekali saat pertama berubah.
+
+```dart
+once(count, (_) {
+  print("Pertama kali berubah");
+});
+```
+
+### debounce()
+
+Menunggu user berhenti mengetik.
+
+```dart
+debounce(search, (_) {
+  searchApi();
+}, time: Duration(milliseconds: 500));
+```
+
+### interval()
+
+Membatasi trigger per interval waktu.
+
+```dart
+interval(buttonTap, (_) {
+  sendRequest();
+}, time: Duration(seconds: 1));
+```
+
+---
+
+## Kelebihan State Management GetX
+
+* Ringan
+* Cepat
+* Tidak perlu setState berlebihan
+* Reaktif
+* Kode lebih bersih
+* Cocok untuk project kecil maupun besar
+
+---
+
+# 2. Route Management
+
+## Apa Itu Route Management?
+
+Route Management adalah sistem navigasi antar halaman tanpa perlu `BuildContext`.
+
+---
+
+## Tanpa GetX
+
+```dart
+Navigator.push(
+  context,
+  MaterialPageRoute(
+    builder: (_) => HomePage(),
+  ),
+);
+```
+
+---
+
+## Dengan GetX
+
+```dart
+Get.to(HomePage());
+```
+
+Lebih singkat, bersih, dan praktis.
+
+---
+
+## Navigasi Dasar
+
+### Pindah Halaman
+
+```dart
+Get.to(ProfilePage());
+```
+
+### Ganti Halaman
+
+Halaman lama dihapus dari stack.
+
+```dart
+Get.off(LoginPage());
+```
+
+### Hapus Semua Halaman
+
+```dart
+Get.offAll(HomePage());
+```
+
+### Kembali ke Halaman Sebelumnya
+
+```dart
+Get.back();
+```
+
+---
+
+## Named Route
+
+### Setup Route
+
+```dart
+GetMaterialApp(
+  initialRoute: '/',
+  getPages: [
+    GetPage(
+      name: '/',
+      page: () => HomePage(),
+    ),
+    GetPage(
+      name: '/login',
+      page: () => LoginPage(),
+    ),
+    GetPage(
+      name: '/profile',
+      page: () => ProfilePage(),
+    ),
+  ],
+);
+```
+
+### Navigasi dengan Nama Route
+
+```dart
+Get.toNamed('/profile');
+```
+
+---
+
+## Kirim Data Antar Halaman
+
+### Mengirim Data
+
+```dart
+Get.to(ProfilePage(), arguments: "Aqshal");
+```
+
+### Mengambil Data
+
+```dart
+String nama = Get.arguments;
+```
+
+---
+
+## Dynamic Route Parameter
+
+### Setup
+
+```dart
+GetPage(
+  name: '/user/:id',
+  page: () => UserPage(),
+);
+```
+
+### Navigasi
+
+```dart
+Get.toNamed('/user/10');
+```
+
+### Ambil Parameter
+
+```dart
+String id = Get.parameters['id']!;
+```
+
+---
+
+## Middleware Route
+
+Contoh proteksi login:
+
+```dart
+class AuthMiddleware extends GetMiddleware {
+  @override
+  RouteSettings? redirect(String? route) {
+    bool isLogin = false;
+
+    if (!isLogin) {
+      return const RouteSettings(name: '/login');
+    }
+    return null;
+  }
+}
+```
+
+---
+
+## Kelebihan Route Management
+
+* Tidak butuh context
+* Navigasi cepat
+* Named route
+* Mudah kirim data
+* Support middleware
+* Struktur lebih clean
+
+---
+
+# 3. Dependency Management
+
+## Apa Itu Dependency Management?
+
+Dependency Management adalah sistem untuk membuat, menyimpan, menyediakan, dan menghapus object seperti Controller, Service, Repository, dan lainnya secara otomatis.
+
+GetX menggunakan konsep:
+
+> Dependency Injection (DI)
+
+---
+
+## Get.put()
+
+Membuat object langsung.
+
+```dart
+Get.put(HomeController());
+```
+
+Ambil object:
+
+```dart
+Get.find<HomeController>();
+```
+
+---
+
+## Get.lazyPut()
+
+Object dibuat saat pertama kali dipanggil.
+
+```dart
+Get.lazyPut(() => AuthController());
+```
+
+Lebih hemat memory.
+
+---
+
+## Get.putAsync()
+
+Untuk object asynchronous.
+
+```dart
+await Get.putAsync(() async {
+  return await DatabaseService().init();
+});
+```
+
+Cocok untuk:
+
+* SharedPreferences
+* Hive
+* SQLite
+* Firebase Init
+
+---
+
+## Get.create()
+
+Selalu membuat instance baru.
+
+```dart
+Get.create(() => CartController());
+```
+
+---
+
+## Permanent Dependency
+
+Jika object harus tetap hidup selama aplikasi berjalan.
+
+```dart
+Get.put(AuthService(), permanent: true);
+```
+
+Contoh:
+
+* Session login
+* Theme service
+* Language service
+
+---
+
+## Auto Dispose
+
+GetX dapat menghapus dependency otomatis saat tidak digunakan lagi sehingga aplikasi lebih ringan.
+
+---
+
 ## Binding (Best Practice)
 
-Untuk project besar, dependency sebaiknya dikelola dengan Binding.
+Dependency sebaiknya dipisahkan menggunakan Binding.
 
 ### HomeBinding
 
@@ -185,99 +470,42 @@ class HomeBinding extends Bindings {
 }
 ```
 
----
-
-### Route Setup
+### Route dengan Binding
 
 ```dart
-GetMaterialApp(
-  getPages: [
-    GetPage(
-      name: '/home',
-      page: () => HomePage(),
-      binding: HomeBinding(),
-    ),
-  ],
+GetPage(
+  name: '/home',
+  page: () => HomePage(),
+  binding: HomeBinding(),
 );
 ```
 
-Saat halaman dibuka:
-
-* Controller otomatis dibuat
-* Siap digunakan
+Saat halaman dibuka, controller otomatis tersedia.
 
 ---
 
-## Permanent Dependency
+## Kelebihan Dependency Management
 
-Jika object harus hidup selama aplikasi berjalan:
-
-```dart
-Get.put(AuthService(), permanent: true);
-```
-
-Contoh:
-
-* Login session
-* Theme service
-* Language service
-
----
-
-## Auto Dispose
-
-Secara default, GetX dapat menghapus dependency saat sudah tidak digunakan lagi.
-
-Keuntungan:
-
-* Hemat memory
-* Object tidak menumpuk
-* Lebih ringan
-
----
-
-## Perbandingan Singkat
-
-| Method       | Dibuat Kapan   | Cocok Untuk      |
-| ------------ | -------------- | ---------------- |
-| Get.put      | Langsung       | Controller utama |
-| Get.lazyPut  | Saat dipanggil | Hemat memory     |
-| Get.putAsync | Async startup  | Database / Prefs |
-| Get.create   | Selalu baru    | Temporary object |
-
----
-
-## Analogi Sederhana
-
-Bayangkan aplikasi adalah kantor:
-
-* Controller = Pegawai
-* Service = Staff tetap
-* Dependency Management = HRD
-
-HRD mengatur:
-
-* Siapa masuk kerja
-* Kapan dipakai
-* Kapan pulang
-
-Kamu tinggal panggil saat butuh.
-
----
-
-## Keuntungan Dependency Management GetX
-
-* Kode lebih bersih
 * Tidak perlu instance manual
 * Reusable object
-* Mudah maintenance
+* Auto dispose
 * Lebih scalable
-* Cocok untuk Clean Architecture
-* Memory management otomatis
+* Clean architecture friendly
+* Kode lebih rapi
 
 ---
 
-## Struktur Project Besar
+# Perbandingan 3 Pilar
+
+| Pilar                 | Fungsi                          |
+| --------------------- | ------------------------------- |
+| State Management      | Mengatur data dan UI            |
+| Route Management      | Navigasi antar halaman          |
+| Dependency Management | Mengelola object dan controller |
+
+---
+
+# Struktur Project GetX
 
 ```text
 lib/
@@ -287,6 +515,10 @@ lib/
 │   │   │   ├── home_page.dart
 │   │   │   ├── home_controller.dart
 │   │   │   └── home_binding.dart
+│   │   ├── auth/
+│   │   │   ├── login_page.dart
+│   │   │   ├── auth_controller.dart
+│   │   │   └── auth_binding.dart
 │   ├── routes/
 │   │   ├── app_pages.dart
 │   │   └── app_routes.dart
@@ -295,27 +527,89 @@ lib/
 
 ---
 
-## Kesimpulan
+# Setup Awal
 
-**Dependency Management pada GetX adalah sistem untuk membuat, menyimpan, menyediakan, dan menghapus object seperti Controller atau Service secara otomatis menggunakan Dependency Injection.**
+## Tambahkan Package
 
-Dengan fitur ini, aplikasi menjadi:
-
-* Lebih rapi
-* Lebih efisien
-* Mudah dikembangkan
-* Profesional
-
----
-
-## Tiga Pilar GetX
-
-1. State Management
-2. Route Management
-3. Dependency Management
+```yaml
+dependencies:
+  flutter:
+    sdk: flutter
+  get: ^4.6.6
+```
 
 ---
 
-## Author
+## main.dart
 
-Made with Flutter + GetX
+```dart
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+
+void main() {
+  runApp(
+    GetMaterialApp(
+      debugShowCheckedModeBanner: false,
+      home: HomePage(),
+    ),
+  );
+}
+```
+
+---
+
+# Best Practice
+
+## Gunakan Folder Modular
+
+Pisahkan berdasarkan fitur:
+
+* home
+* auth
+* profile
+* settings
+
+---
+
+## Pisahkan Controller dan UI
+
+Jangan campur logic dengan tampilan.
+
+---
+
+## Gunakan Binding
+
+Agar dependency rapi dan otomatis.
+
+---
+
+## Gunakan Named Route
+
+Untuk project besar lebih mudah dikelola.
+
+---
+
+## Gunakan Obx Hanya Jika Perlu
+
+Agar performa tetap optimal.
+
+---
+
+# Kesimpulan
+
+GetX memiliki 3 pilar utama yang membuat pengembangan Flutter jauh lebih cepat dan efisien:
+
+1. **State Management** untuk mengatur perubahan data dan UI
+2. **Route Management** untuk navigasi antar halaman
+3. **Dependency Management** untuk mengelola object dan controller
+
+Dengan GetX, aplikasi menjadi:
+
+* Lebih clean
+* Minim boilerplate
+* Mudah maintenance
+* Cepat dikembangkan
+* Cocok untuk project besar
+* Struktur profesional
+
+---
